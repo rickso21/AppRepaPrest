@@ -1,20 +1,28 @@
-import React from 'react';
+// src/navigation/AppNavigator.tsx
+import React, { JSX } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+
+// IMPORTANTE: Verifica que estas rutas sean correctas
 import Welcome from '../screens/Welcome/Welcome';
 import Login from '../screens/Login/Login';
 import Home from '../screens/Home/Home';
 
-const Stack = createStackNavigator();
+export type RootStackParamList = {
+  Welcome: undefined;
+  Login: undefined;
+  Home: undefined;
+};
 
-export default function AppNavigator() {
+const Stack = createStackNavigator<RootStackParamList>();
+
+export default function AppNavigator(): JSX.Element {
   return (
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName="Welcome"
         screenOptions={{
           headerShown: false,
-          cardStyle: { backgroundColor: 'transparent' },
         }}
       >
         <Stack.Screen name="Welcome" component={Welcome} />
