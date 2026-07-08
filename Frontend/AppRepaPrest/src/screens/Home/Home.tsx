@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { JSX } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -8,8 +8,12 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { StackScreenProps } from '@react-navigation/stack';
+import { RootStackParamList } from '../../navigation/AppNavigator';
 
-export default function HomeScreen({ navigation }) {
+type Props = StackScreenProps<RootStackParamList, 'Home'>;
+
+export default function HomeScreen({ navigation }: Props): JSX.Element {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
