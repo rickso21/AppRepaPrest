@@ -1,3 +1,4 @@
+import React, { JSX } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -12,12 +13,16 @@ import {
   Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { StackScreenProps } from '@react-navigation/stack';
+import { RootStackParamList } from '../../navigation/AppNavigator';
 
 const { width, height } = Dimensions.get('window');
 
 const backgroundImage = require('../../../assets/images/photo-1519501025264-65ba15a82390.jpg');
 
-export default function WelcomeScreen({ navigation }) {  //RECIBE navigation
+type Props = StackScreenProps<RootStackParamList, 'Welcome'>;
+
+export default function WelcomeScreen({ navigation }: Props): JSX.Element {
   return (
     <ImageBackground
       source={backgroundImage}
@@ -35,18 +40,18 @@ export default function WelcomeScreen({ navigation }) {  //RECIBE navigation
           <View style={styles.overlay}>
 
             {/* Logo o Título */}
-<View style={styles.header}>
-  <View style={styles.logoCircle}>
-    <Image 
-      source={require('../../../assets/images/123.png')} // 👈 Ruta de tu imagen
-      style={styles.logoImage}
-      resizeMode="contain"
-    />
-  </View>
-  <Text style={styles.title}>Delivery</Text>
-  <Text style={styles.subtitle}>Herramientas para Repartidores</Text>
-  <View style={styles.divider} />
-</View>
+            <View style={styles.header}>
+              <View style={styles.logoCircle}>
+                <Image 
+                  source={require('../../../assets/images/123.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.title}>Delivery</Text>
+              <Text style={styles.subtitle}>Herramientas para Repartidores</Text>
+              <View style={styles.divider} />
+            </View>
 
             {/* Contenedor Blanco con Herramientas */}
             <View style={styles.whiteCard}>
@@ -76,7 +81,7 @@ export default function WelcomeScreen({ navigation }) {  //RECIBE navigation
                 </View>
                 <View style={styles.featureContent}>
                   <Text style={styles.featureText}>Market Place</Text>
-                  <Text style={styles.featureDesc}>Ventas </Text>
+                  <Text style={styles.featureDesc}>Ventas</Text>
                 </View>
               </View>
 
@@ -91,10 +96,10 @@ export default function WelcomeScreen({ navigation }) {  //RECIBE navigation
               </View>
             </View>
 
-            {/* Botón Empezar - AHORA NAVEGA A HOME */}
+            {/* Botón Empezar - Navega a Login */}
             <TouchableOpacity
               style={styles.button}
-              onPress={() => navigation.navigate('Login')}  // 👈 CAMBIADO
+              onPress={() => navigation.navigate('Login')}
               activeOpacity={0.8}
             >
               <Text style={styles.buttonText}>EMPEZAR</Text>
@@ -117,89 +122,87 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent', 
+    backgroundColor: 'transparent',
   },
   scrollContainer: {
     flexGrow: 1,
     minHeight: height,
     paddingHorizontal: 25,
     paddingVertical: Platform.OS === 'ios' ? 40 : 30,
-    alignItems: 'center', 
+    alignItems: 'center',
   },
   overlay: {
     flex: 1,
-    width: '100%', 
-    maxWidth: 500, 
+    width: '100%',
+    maxWidth: 500,
     justifyContent: 'space-between',
   },
   header: {
-    alignItems: 'center', 
+    alignItems: 'center',
     width: '100%',
     marginTop: Platform.OS === 'ios' ? 10 : 5,
   },
   logoCircle: {
-  width: 170,
-  height: 170,
-  borderRadius: 85,
-  backgroundColor: 'rgba(255,255,255,0.95)',
-  alignItems: 'center',
-  justifyContent: 'center',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.3,
-  shadowRadius: 20,
-  elevation: 15,
-  overflow: 'hidden',
-  borderWidth: 4,
-  borderColor: '#FF6B35',
-},
-logoImage: {
-  width: '88%',
-  height: '88%',
-  borderRadius: 77,  // 85 - 8 (por el borde)
-},
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 15,
+    overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: '#FF6B35',
+  },
+  logoImage: {
+    width: '88%',
+    height: '88%',
+    borderRadius: 77,
+  },
   title: {
     fontSize: Platform.OS === 'ios' ? 30 : 32,
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 12,
     letterSpacing: 1.5,
-    textAlign: 'center', 
+    textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
   },
- subtitle: {
-  fontSize: Platform.OS === 'ios' ? 13 : 14,
-  color: '#ffffff', // Blanco puro
-  marginTop: 4,
-  letterSpacing: 1.5,
-  fontWeight: '500', // Aumentado de 300 a 500
-  textAlign: 'center',
-  // Sombra más pronunciada
-  textShadowColor: 'rgba(0,0,0,0.7)',
-  textShadowOffset: { width: 0, height: 2 },
-  textShadowRadius: 8,
-  // Opcional: fondo semitransparente detrás del texto
-  backgroundColor: 'rgba(0,0,0,0.2)',
-  paddingHorizontal: 10,
-  paddingVertical: 4,
-  borderRadius: 8,
-},
+  subtitle: {
+    fontSize: Platform.OS === 'ios' ? 13 : 14,
+    color: '#ffffff',
+    marginTop: 4,
+    letterSpacing: 1.5,
+    fontWeight: '500',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
   divider: {
     width: 50,
     height: 3,
     backgroundColor: '#FF6B35',
     borderRadius: 2,
     marginTop: 12,
-    alignSelf: 'center', 
+    alignSelf: 'center',
   },
   whiteCard: {
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: 20,
     padding: 20,
     marginVertical: 15,
-    width: '100%', 
+    width: '100%',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -262,7 +265,7 @@ logoImage: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%', 
+    width: '100%',
     shadowColor: '#FF6B35',
     shadowOffset: {
       width: 0,

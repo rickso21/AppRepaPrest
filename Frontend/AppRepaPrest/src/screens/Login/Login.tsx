@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { JSX, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -13,20 +13,26 @@ import {
   ScrollView,
   Alert,
   Dimensions,
-  Image  
+  Image,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { StackScreenProps } from '@react-navigation/stack';
+import { RootStackParamList } from '../../navigation/AppNavigator';
 
 const { width, height } = Dimensions.get('window');
 const backgroundImage = require('../../../assets/images/photo-1519501025264-65ba15a82390.jpg');
 
-export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+// Definir el tipo de las props
+type Props = StackScreenProps<RootStackParamList, 'Login'>;
 
-  const handleLogin = () => {
+export default function LoginScreen({ navigation }: Props): JSX.Element {
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleLogin = (): void => {
     // Validar campos
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos');
@@ -47,9 +53,12 @@ export default function LoginScreen({ navigation }) {
     // Simulación de login - Aquí iría tu lógica de autenticación
     setTimeout(() => {
       setLoading(false);
-      // Si el login es exitoso, navega al Home
+      // Configura el appnavigator cuando tengas los valores correctos.
       Alert.alert('Éxito', '¡Bienvenido!');
-      navigation.navigate('Home');
+      navigation.navigate('Home', {
+        userId: '12345',
+        userName: 'Usuario Ejemplo'
+      });
     }, 1500);
   };
 
@@ -77,11 +86,11 @@ export default function LoginScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => navigation.goBack()}
+                activeOpacity={0.7}
               >
                 <Ionicons name="arrow-back" size={28} color="#fff" />
               </TouchableOpacity>
 
-              {/* Logo y Título - CON IMAGEN GRANDE */}
               <View style={styles.header}>
                 <View style={styles.logoCircle}>
                   <Image 
@@ -126,6 +135,7 @@ export default function LoginScreen({ navigation }) {
                   <TouchableOpacity
                     onPress={() => setShowPassword(!showPassword)}
                     style={styles.eyeIcon}
+                    activeOpacity={0.7}
                   >
                     <Ionicons
                       name={showPassword ? 'eye-outline' : 'eye-off-outline'}
@@ -139,6 +149,7 @@ export default function LoginScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.forgotPasswordContainer}
                   onPress={() => Alert.alert('Recuperar contraseña', 'Función en desarrollo')}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
                 </TouchableOpacity>
@@ -150,18 +161,28 @@ export default function LoginScreen({ navigation }) {
                   disabled={loading}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.loginButtonText}>
-                    {loading ? 'CARGANDO...' : 'INICIAR SESIÓN'}
-                  </Text>
-                  {!loading && (
-                    <Ionicons name="arrow-forward-circle" size={24} color="#fff" />
+                  {loading ? (
+                    <>
+                      <ActivityIndicator color="#fff" size="small" />
+                      <Text style={[styles.loginButtonText, { marginLeft: 10 }]}>
+                        CARGANDO...
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.loginButtonText}>INICIAR SESIÓN</Text>
+                      <Ionicons name="arrow-forward-circle" size={24} color="#fff" />
+                    </>
                   )}
                 </TouchableOpacity>
 
                 {/* Texto de registro */}
                 <View style={styles.registerContainer}>
                   <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-                  <TouchableOpacity onPress={() => Alert.alert('Registro', 'Función en desarrollo')}>
+                  <TouchableOpacity 
+                    onPress={() => Alert.alert('Registro', 'Función en desarrollo')}
+                    activeOpacity={0.7}
+                  >
                     <Text style={styles.registerLink}>Regístrate</Text>
                   </TouchableOpacity>
                 </View>
@@ -210,7 +231,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  // 👈 LOGO GRANDE - MISMO ESTILO QUE WELCOME
   logoCircle: {
     width: 170,
     height: 170,
