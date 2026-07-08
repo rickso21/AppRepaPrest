@@ -53,7 +53,7 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
     // Simulación de login - Aquí iría tu lógica de autenticación
     setTimeout(() => {
       setLoading(false);
-      // Si el login es exitoso, navega al Home
+      // Configura el appnavigator cuando tengas los valores correctos.
       Alert.alert('Éxito', '¡Bienvenido!');
       navigation.navigate('Home', {
         userId: '12345',
