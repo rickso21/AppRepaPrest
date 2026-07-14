@@ -19,11 +19,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
-
+import { authService } from '../../services/auth/auth.service';
 const { width, height } = Dimensions.get('window');
 const backgroundImage = require('../../../assets/images/photo-1519501025264-65ba15a82390.jpg');
 
-// Definir el tipo de las props
 type Props = StackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props): JSX.Element {
@@ -32,34 +31,87 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const handleLogin = (): void => {
-    // Validar campos
-    if (!email.trim() || !password.trim()) {
+  const isValidEmail = (input: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(input.trim());
+  };
+
+  const isValidPhone = (input: string): boolean => {
+    const phoneRegex = /^[0-9]{10}$/;
+    return phoneRegex.test(input.replace(/\s/g, ''));
+  };
+
+  const handleLogin = async (): Promise<void> => {
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
-    // Validar email (básico)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[0-9]{10}$/;
-    
-    if (!emailRegex.test(email) && !phoneRegex.test(email)) {
-      Alert.alert('Error', 'Ingresa un correo válido o número de teléfono (10 dígitos)');
+    if (trimmedPassword.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
     setLoading(true);
-    
-    // Simulación de login - Aquí iría tu lógica de autenticación
-    setTimeout(() => {
-      setLoading(false);
-      // Configura el appnavigator cuando tengas los valores correctos.
-      Alert.alert('Éxito', '¡Bienvenido!');
-      navigation.navigate('Home', {
-        userId: '12345',
-        userName: 'Usuario Ejemplo'
+
+    try {
+      
+      const response = await authService.login({
+        email: trimmedEmail,
+        password: trimmedPassword
       });
-    }, 1500);
+
+
+      if (response.res === true) {
+        console.log('Login exitoso, usuario:', response.user);
+
+        navigation.replace('Home', {
+          userId: response.user.id,
+          userName: response.user.nombre,   
+          userEmail: response.user.email,
+          userPhone: response.user.telefono || ''
+        });
+      } else {
+        Alert.alert('Error', response.msg || 'Credenciales incorrectas');
+      }
+
+    } catch (error: any) {
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 401:
+            Alert.alert('Error', data.msg || 'Contraseña o Usuario incorrecto');
+            break;
+          case 404:
+            Alert.alert('Error', data.msg || 'Usuario no encontrado');
+            break;
+          case 422:
+            if (data.errors) {
+              const messages = Object.values(data.errors).flat().join('\n');
+              Alert.alert('Error de validación', messages);
+            } else {
+              Alert.alert('Error', data.msg || 'Datos inválidos');
+            }
+            break;
+          default:
+            Alert.alert('Error', data.msg || 'Error en el servidor');
+        }
+      } else if (error.request) {
+        Alert.alert(
+          'Error de conexión', 
+          'No se pudo conectar con el servidor.\nVerifica que Laravel esté corriendo'
+        );
+      } else {
+        Alert.alert('Error', error.message || 'Ocurrió un error inesperado');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,7 +134,6 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
           >
             <View style={styles.container}>
               
-              {/* Botón Volver */}
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => navigation.goBack()}
@@ -104,9 +155,7 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                 <View style={styles.divider} />
               </View>
 
-              {/* Formulario */}
               <View style={styles.formContainer}>
-                {/* Campo Email/Teléfono */}
                 <View style={styles.inputContainer}>
                   <Ionicons name="mail-outline" size={22} color="#666" style={styles.inputIcon} />
                   <TextInput
@@ -115,13 +164,13 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                     placeholderTextColor="#999"
                     value={email}
                     onChangeText={setEmail}
-                    keyboardType="email-address"
+                    keyboardType="default"
                     autoCapitalize="none"
                     autoCorrect={false}
+                    editable={!loading}
                   />
                 </View>
 
-                {/* Campo Password */}
                 <View style={styles.inputContainer}>
                   <Ionicons name="lock-closed-outline" size={22} color="#666" style={styles.inputIcon} />
                   <TextInput
@@ -131,6 +180,8 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
+                    editable={!loading}
+                    onSubmitEditing={handleLogin}
                   />
                   <TouchableOpacity
                     onPress={() => setShowPassword(!showPassword)}
@@ -145,7 +196,6 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                   </TouchableOpacity>
                 </View>
 
-                {/* Olvidé mi contraseña */}
                 <TouchableOpacity
                   style={styles.forgotPasswordContainer}
                   onPress={() => Alert.alert('Recuperar contraseña', 'Función en desarrollo')}
@@ -154,7 +204,6 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                   <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
                 </TouchableOpacity>
 
-                {/* Botón Iniciar Sesión */}
                 <TouchableOpacity
                   style={[styles.loginButton, loading && styles.disabledButton]}
                   onPress={handleLogin}
@@ -176,7 +225,6 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                   )}
                 </TouchableOpacity>
 
-                {/* Texto de registro */}
                 <View style={styles.registerContainer}>
                   <Text style={styles.registerText}>¿No tienes cuenta? </Text>
                   <TouchableOpacity 

@@ -75,22 +75,14 @@ export default function WelcomeScreen({ navigation }: Props): JSX.Element {
                 </View>
               </View>
 
-              <View style={styles.featureItem}>
-                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(33, 150, 243, 0.15)' }]}>
-                  <Ionicons name="trending-up" size={22} color="#2196F3" />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureText}>Market Place</Text>
-                  <Text style={styles.featureDesc}>Ventas</Text>
-                </View>
-              </View>
+             
 
               <View style={[styles.featureItem, styles.lastFeature]}>
                 <View style={[styles.iconWrapper, { backgroundColor: 'rgba(255, 107, 53, 0.15)' }]}>
                   <Ionicons name="people" size={22} color="#FF6B35" />
                 </View>
                 <View style={styles.featureContent}>
-                  <Text style={styles.featureText}>Red Social</Text>
+                  <Text style={styles.featureText}>Red Social Delivery's</Text>
                   <Text style={styles.featureDesc}>Protección y comunidades</Text>
                 </View>
               </View>

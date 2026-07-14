@@ -11,8 +11,14 @@ import Home from '../screens/Home/Home';
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
-  Home: undefined;
-};
+  Home: {
+    userId?: number;
+    userName?: string;
+    userEmail?: string;
+    userPhone?: string;
+  } | undefined;
+
+  };
 
 const Stack = createStackNavigator<RootStackParamList>();
 
