@@ -20,6 +20,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { authService } from '../../services/auth.service'; 
 
 const { height } = Dimensions.get('window');
 const backgroundImage = require('../../../assets/images/photo-1519501025264-65ba15a82390.jpg');
@@ -31,60 +32,135 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-
-  // Saber qué campo está enfocado para resaltarlo
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // Animación de entrada (igual que el Welcome)
+  // Animaciones
   const fade = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(30)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Verificar si ya está autenticado
+    const checkAuth = async () => {
+      const isAuth = await authService.isAuthenticated();
+      if (isAuth) {
+        const user = await authService.getUserData();
+        if (user) {
+          navigation.replace('Home', {
+            userId: user.id,
+            userName: user.nombre,
+            userEmail: user.email,
+            userPhone: user.telefono || ''
+          });
+        }
+      }
+    };
+    checkAuth();
+
+    // Animaciones de entrada
     Animated.parallel([
       Animated.timing(fade, { toValue: 1, duration: 700, useNativeDriver: true }),
       Animated.timing(slide, { toValue: 0, duration: 700, useNativeDriver: true }),
     ]).start();
-  }, [fade, slide]);
+  }, []);
 
   const onPressIn = () =>
     Animated.spring(buttonScale, { toValue: 0.96, useNativeDriver: true }).start();
   const onPressOut = () =>
     Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
 
-  const handleLogin = (): void => {
+  const handleLogin = async (): Promise<void> => {
+    // Validar campos vacíos
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
-    
     }
 
+    // Validar formato (email o teléfono)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[0-9]{10}$/;
 
-    if (!emailRegex.test(email) && !phoneRegex.test(email)) {
+    if (!emailRegex.test(email.trim()) && !phoneRegex.test(email.trim())) {
       Alert.alert('Error', 'Ingresa un correo válido o número de teléfono (10 dígitos)');
       return;
     }
 
     setLoading(true);
 
-    // Simulación de login - Aquí iría tu lógica de autenticación
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Éxito', '¡Bienvenido!');
-      navigation.navigate('Home', {
-        userId: '12345',
-        userName: 'Usuario Ejemplo',
+    try {
+      const response = await authService.login({
+        email: email.trim(),
+        password: password.trim()
       });
-    }, 1500);
+
+      // Verificar respuesta exitosa
+      if (response.res === true && response.user) {
+        console.log('Login exitoso:', response.user);
+
+        // Navegar al Home con los datos del usuario
+        navigation.replace('Home', {
+          userId: response.user.id,
+          userName: response.user.nombre,
+          userEmail: response.user.email,
+          userPhone: response.user.telefono || ''
+        });
+      } else {
+        // Si response.res es false
+        Alert.alert('Error', response.msg || 'Credenciales incorrectas');
+      }
+
+    } catch (error: any) {
+      console.error('Error en login:', error);
+
+      // El interceptor de axios ya maneja el 401 automáticamente
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            Alert.alert('Error', data.msg || 'Solicitud incorrecta');
+            break;
+          case 401:
+            Alert.alert('Error', data.msg || 'Contraseña o Usuario incorrecto');
+            break;
+          case 404:
+            Alert.alert('Error', data.msg || 'Usuario no encontrado');
+            break;
+          case 422:
+            // Errores de validación de Laravel
+            if (data.errors) {
+              const messages = Object.values(data.errors).flat().join('\n');
+              Alert.alert('Error de validación', messages);
+            } else {
+              Alert.alert('Error', data.msg || 'Datos inválidos');
+            }
+            break;
+          case 429:
+            Alert.alert('Error', 'Demasiados intentos. Espera un momento.');
+            break;
+          case 500:
+            Alert.alert('Error', 'Error interno del servidor. Intenta más tarde.');
+            break;
+          default:
+            Alert.alert('Error', data.msg || 'Error en el servidor');
+        }
+      } else if (error.request) {
+        Alert.alert(
+          'Error de conexión',
+          'No se pudo conectar con el servidor.\nVerifica tu conexión a internet.'
+        );
+      } else {
+        Alert.alert('Error', error.message || 'Ocurrió un error inesperado');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
       <StatusBar style="light" />
-
-      {/* Misma capa oscura del Welcome, para que ambas pantallas se vean de la misma familia */}
       <View style={styles.scrim} />
 
       <SafeAreaView style={styles.safeArea}>
@@ -147,6 +223,7 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
+                    editable={!loading}
                   />
                 </View>
 
@@ -172,11 +249,13 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
                     secureTextEntry={!showPassword}
+                    editable={!loading}
                   />
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
                     style={styles.eyeIcon}
                     hitSlop={10}
+                    disabled={loading}
                   >
                     <Ionicons
                       name={showPassword ? 'eye-outline' : 'eye-off-outline'}
@@ -191,6 +270,7 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                   style={styles.forgotPasswordContainer}
                   onPress={() => navigation.navigate('ForgotPassword')}
                   hitSlop={8}
+                  disabled={loading}
                 >
                   <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
                 </Pressable>
@@ -208,7 +288,7 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                       <>
                         <ActivityIndicator color="#fff" size="small" />
                         <Text style={[styles.loginButtonText, { marginLeft: 10, marginRight: 0 }]}>
-                          CARGANDO...
+                          INICIANDO SESIÓN...
                         </Text>
                       </>
                     ) : (
@@ -226,6 +306,7 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
                   <Pressable
                     onPress={() => navigation.navigate('Register')}
                     hitSlop={8}
+                    disabled={loading}
                   >
                     <Text style={styles.registerLink}>Regístrate</Text>
                   </Pressable>
@@ -241,13 +322,13 @@ export default function LoginScreen({ navigation }: Props): JSX.Element {
   );
 }
 
+
 const styles = StyleSheet.create({
   background: {
     flex: 1,
     width: '100%',
     height: '100%',
   },
-  // Misma capa oscura que el Welcome
   scrim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(10, 10, 20, 0.55)',
@@ -327,7 +408,6 @@ const styles = StyleSheet.create({
     width: '100%',
     marginVertical: 20,
   },
-  // Campos "glass": translúcidos oscuros, igual que las tarjetas del Welcome
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -338,7 +418,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
   },
-  // Cuando el campo está enfocado, se resalta con el naranja de marca
   inputFocused: {
     borderColor: '#FF6B35',
     backgroundColor: 'rgba(255,107,53,0.08)',

@@ -9,6 +9,8 @@ import Home from '../screens/Home/Home';
 import Register from '../screens/Register/Register';
 import ForgotPassword from '../screens/ForgotPassword/ForgotPassword';
 import ResetPassword from '../screens/ResetPassword/ResetPassword';
+import { authService } from '../services/auth.service'; 
+
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -16,7 +18,12 @@ export type RootStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   ResetPassword: { email: string };
-  Home: { userId: string; userName: string };
+  Home: {
+    userId?: number;
+    userName?: string;
+    userEmail?: string;
+    userPhone?: string;
+  };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
