@@ -1,105 +1,176 @@
-import React, { JSX } from 'react';
+import React, { JSX, useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
   Text,
   View,
   ImageBackground,
-  TouchableOpacity,
+  Pressable,
   SafeAreaView,
   Image,
   Dimensions,
   ScrollView,
-  Platform
+  Platform,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const backgroundImage = require('../../../assets/images/photo-1519501025264-65ba15a82390.jpg');
 
 type Props = StackScreenProps<RootStackParamList, 'Welcome'>;
 
-export default function WelcomeScreen({ navigation }: Props): JSX.Element {
+type Feature = {
+  icon: string;
+  color: string;
+  title: string;
+  desc: string;
+};
+
+const FEATURES: Feature[] = [
+  { icon: 'locate', color: '#1fd125', title: 'Monitoreo GPS', desc: 'Seguimiento en tiempo real' },
+  { icon: 'cash-outline', color: '#ef9905', title: 'Préstamos al momento', desc: 'Solicita tu primer préstamo' },
+//  { icon: 'trending-up', color: '#008cff', title: 'Market Place', desc: 'Compra y vende con seguridad' },
+  { icon: 'people', color: '#ff6932', title: 'Red Social', desc: '       Protección y comunidad' },
+];
+
+/**
+ * Tarjeta de funcionalidad con su propia animación.
+ * - "index" define su retraso en la cascada (aparece después de la anterior).
+ * - Reacciona encogiéndose al tocarla.
+ */
+function FeatureCard({ feature, index }: { feature: Feature; index: number }): JSX.Element {
+  const appear = useRef(new Animated.Value(0)).current;   // 0 = oculta, 1 = visible
+
+  useEffect(() => {
+    // Cada tarjeta espera (index * 120ms) antes de aparecer -> efecto cascada de entrada
+    Animated.timing(appear, {
+      toValue: 1,
+      duration: 500,
+      delay: 250 + index * 120,
+      useNativeDriver: true,
+    }).start();
+  }, [appear, index]);
+
   return (
-    <ImageBackground
-      source={backgroundImage}
-      style={styles.background}
-      resizeMode="cover"
+    <Animated.View
+      style={{
+        opacity: appear,
+        transform: [
+          {
+            // se desliza un poco desde la derecha mientras aparece
+            translateX: appear.interpolate({
+              inputRange: [0, 1],
+              outputRange: [30, 0],
+            }),
+          },
+        ],
+      }}
     >
+      <View style={styles.featureItem}>
+        <View style={[styles.iconWrapper, { backgroundColor: feature.color + '26' }]}>
+          <Ionicons name={feature.icon as any} size={24} color={feature.color} />
+        </View>
+        {/* Texto centrado */}
+        <View style={styles.featureContent}>
+          <Text style={styles.featureText}>{feature.title}</Text>
+          <Text style={styles.featureDesc}>{feature.desc}</Text>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+export default function WelcomeScreen({ navigation }: Props): JSX.Element {
+  const fade = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(30)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const buttonPulse = useRef(new Animated.Value(1)).current; // latido sutil continuo del botón
+
+  useEffect(() => {
+    // El encabezado y el botón entran suave; las tarjetas tienen su propia cascada
+    Animated.parallel([
+      Animated.timing(fade, { toValue: 1, duration: 700, useNativeDriver: true }),
+      Animated.timing(slide, { toValue: 0, duration: 700, useNativeDriver: true }),
+    ]).start();
+
+    // Latido MUY sutil e infinito del botón para atraer la mirada sin moverse mucho
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(buttonPulse, {
+          toValue: 1.008,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonPulse, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+
+    return () => pulse.stop(); // detener el latido al salir de la pantalla
+  }, [fade, slide, buttonPulse]);
+
+  const onPressIn = () =>
+    Animated.spring(buttonScale, { toValue: 0.96, useNativeDriver: true }).start();
+  const onPressOut = () =>
+    Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
+
+  return (
+    <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
       <StatusBar style="light" />
+
+      <View style={styles.scrim} />
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
-          bounces={true}
         >
-          <View style={styles.overlay}>
-
-            {/* Logo o Título */}
+          <Animated.View
+            style={[styles.overlay, { opacity: fade, transform: [{ translateY: slide }] }]}
+          >
+            {/* Encabezado */}
             <View style={styles.header}>
               <View style={styles.logoCircle}>
-                <Image 
+                <Image
                   source={require('../../../assets/images/123.png')}
                   style={styles.logoImage}
                   resizeMode="contain"
                 />
               </View>
               <Text style={styles.title}>Delivery</Text>
-              <Text style={styles.subtitle}>Herramientas para Repartidores</Text>
-              <View style={styles.divider} />
+              <Text style={styles.subtitle}>Herramientas para repartidores</Text>
             </View>
 
-            {/* Contenedor Blanco con Herramientas */}
-            <View style={styles.whiteCard}>
-              <View style={styles.featureItem}>
-                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(76, 175, 80, 0.15)' }]}>
-                  <Ionicons name="locate" size={22} color="#4CAF50" />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureText}>Monitoreo GPS en Tiempo Real</Text>
-                  <Text style={styles.featureDesc}>Seguimiento a compañeros siempre</Text>
-                </View>
-              </View>
-
-              <View style={styles.featureItem}>
-                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(255, 215, 0, 0.15)' }]}>
-                  <Ionicons name="cash-outline" size={22} color="#F59E0B" />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureText}>Prestamos al momento</Text>
-                  <Text style={styles.featureDesc}>Solicita tu primer prestamo</Text>
-                </View>
-              </View>
-
-             
-
-              <View style={[styles.featureItem, styles.lastFeature]}>
-                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(255, 107, 53, 0.15)' }]}>
-                  <Ionicons name="people" size={22} color="#FF6B35" />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureText}>Red Social Delivery's</Text>
-                  <Text style={styles.featureDesc}>Protección y comunidades</Text>
-                </View>
-              </View>
+            {/* Funcionalidades: cada una anima en cascada y reacciona al tocar */}
+            <View style={styles.featuresWrap}>
+              {FEATURES.map((f, i) => (
+                <FeatureCard key={f.title} feature={f} index={i} />
+              ))}
             </View>
 
-            {/* Botón Empezar - Navega a Login */}
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => navigation.navigate('Login')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.buttonText}>EMPEZAR</Text>
-              <Ionicons name="arrow-forward-circle" size={28} color="#fff" />
-            </TouchableOpacity>
+            {/* Botón con latido sutil continuo + reacción al presionar */}
+            <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, buttonPulse) }], width: '100%' }}>
+              <Pressable
+                style={styles.button}
+                onPress={() => navigation.navigate('Login')}
+                onPressIn={onPressIn}
+                onPressOut={onPressOut}
+              >
+                <Text style={styles.buttonText}>EMPEZAR</Text>
+                <Ionicons name="arrow-forward" size={22} color="#fff" />
+              </Pressable>
+            </Animated.View>
 
             <Text style={styles.version}>Beta v1.0.0</Text>
-          </View>
+          </Animated.View>
         </ScrollView>
       </SafeAreaView>
     </ImageBackground>
@@ -112,6 +183,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 10, 20, 0.55)',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: 'transparent',
@@ -119,8 +194,8 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     minHeight: height,
-    paddingHorizontal: 25,
-    paddingVertical: Platform.OS === 'ios' ? 40 : 30,
+    paddingHorizontal: 28,
+    paddingVertical: Platform.OS === 'ios' ? 50 : 36,
     alignItems: 'center',
   },
   overlay: {
@@ -128,160 +203,120 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500,
     justifyContent: 'space-between',
+    paddingBottom: 70, // más espacio abajo para que el botón no quede pegado al borde
   },
   header: {
     alignItems: 'center',
     width: '100%',
-    marginTop: Platform.OS === 'ios' ? 10 : 5,
+    marginTop: 10,
   },
   logoCircle: {
-    width: 170,
-    height: 170,
-    borderRadius: 85,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 15,
     overflow: 'hidden',
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: '#FF6B35',
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 12,
   },
   logoImage: {
     width: '88%',
     height: '88%',
-    borderRadius: 77,
+    borderRadius: 68,
   },
   title: {
-    fontSize: Platform.OS === 'ios' ? 30 : 32,
-    fontWeight: 'bold',
+    fontSize: 40,
+    fontWeight: '800',
     color: '#fff',
-    marginTop: 12,
-    letterSpacing: 1.5,
+    marginTop: 20,
+    letterSpacing: 1,
     textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.4)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
   },
   subtitle: {
-    fontSize: Platform.OS === 'ios' ? 13 : 14,
-    color: '#ffffff',
-    marginTop: 4,
-    letterSpacing: 1.5,
-    fontWeight: '500',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.7)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  divider: {
-    width: 50,
-    height: 3,
-    backgroundColor: '#FF6B35',
-    borderRadius: 2,
-    marginTop: 12,
-    alignSelf: 'center',
-  },
-  whiteCard: {
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 20,
-    padding: 20,
-    marginVertical: 15,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  featuresTitle: {
-    color: '#1a1a2e',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 15,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 1,
     letterSpacing: 0.5,
+    fontWeight: '400',
     textAlign: 'center',
   },
+  featuresWrap: {
+    width: '100%',
+    marginVertical: 24,
+    gap: 12,
+  },
+  // Tarjeta horizontal; icono + texto van juntos y centrados en la tarjeta
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     width: '100%',
   },
-  lastFeature: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
-  },
   iconWrapper: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 15,
+    marginRight: 16,
   },
+  // Contenedor del texto: centrado, sin estirarse a todo lo ancho
   featureContent: {
-    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   featureText: {
-    color: '#1a1a2e',
-    fontSize: 15,
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
   featureDesc: {
-    color: 'rgba(0,0,0,0.5)',
+    color: 'rgba(255, 255, 255, 0.88)',
     fontSize: 12,
-    marginTop: 2,
-    letterSpacing: 0.3,
+    marginTop: 3,
+    textAlign: 'center',
   },
   button: {
     backgroundColor: '#FF6B35',
-    paddingVertical: 18,
-    paddingHorizontal: 35,
-    borderRadius: 30,
+    paddingVertical: 20,
+    borderRadius: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
     shadowColor: '#FF6B35',
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 9,
     elevation: 10,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginRight: 12,
-    letterSpacing: 2.5,
+    color: '#ffffff',
+    fontSize: 17,
+    fontWeight: '700',
+    marginRight: 10,
+    letterSpacing: 2,
   },
   version: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255, 255, 255, 0.41)',
     textAlign: 'center',
     fontSize: 11,
-    marginVertical: 10,
+    marginTop: 20,
     letterSpacing: 1,
     width: '100%',
   },

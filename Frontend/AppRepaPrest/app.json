@@ -13,9 +13,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.repaprest.apprepaprest"
-
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -23,11 +21,20 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-       "package": "com.repaprest.apprepaprest"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permite a AppRepaPrest usar tu ubicación para el seguimiento de repartidores."
+        }
+      ],
+      "expo-audio",
+      "expo-secure-store"
+    ]
   }
 }

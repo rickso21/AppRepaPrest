@@ -1,3 +1,4 @@
+// ========== AUTH SERVICE CORREGIDO ==========
 import { api } from '../api';
 import * as SecureStore from 'expo-secure-store';
 
@@ -5,23 +6,23 @@ const Storage = {
   setItem: async (key: string, value: string) => {
     try {
       await SecureStore.setItemAsync(key, value);
-
     } catch (error) {
-
+      console.error('Error al guardar en SecureStore:', error);
     }
   },
   getItem: async (key: string) => {
     try {
       return await SecureStore.getItemAsync(key);
     } catch (error) {
-
-        return null;
+      console.error('Error al obtener de SecureStore:', error);
+      return null;
     }
   },
   removeItem: async (key: string) => {
     try {
       await SecureStore.deleteItemAsync(key);
     } catch (error) {
+      console.error('Error al eliminar de SecureStore:', error);
     }
   },
 };
@@ -46,6 +47,7 @@ export interface LoginResponse {
 }
 
 export const authService = {
+  // ========== LOGIN (FUNCIONA CORRECTAMENTE) ==========
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
       const response = await api.post<LoginResponse>('/login', credentials);
@@ -60,18 +62,30 @@ export const authService = {
     }
   },
 
+  // ========== LOGOUT CORREGIDO (SOLO LIMPIA LOCAL) ==========
   logout: async (): Promise<void> => {
     try {
-      await api.post('/logout');
-    } catch (error) {
-      console.error('Error en logout:', error);
-    } finally {
+      // ========== SOLO LIMPIAR EL ESTADO LOCAL ==========
+      // No llamamos a /logout porque no existe en el backend
+      // Solo eliminamos los datos almacenados localmente
       await Storage.removeItem('userToken');
       await Storage.removeItem('userData');
       await Storage.removeItem('tokenExpiry');
+      console.log('Sesión cerrada localmente');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      // Intentar limpiar de todas formas
+      try {
+        await Storage.removeItem('userToken');
+        await Storage.removeItem('userData');
+        await Storage.removeItem('tokenExpiry');
+      } catch (cleanupError) {
+        console.error('Error al limpiar almacenamiento:', cleanupError);
+      }
     }
   },
 
+  // ========== OTRAS FUNCIONES ==========
   getToken: async (): Promise<string | null> => {
     return await Storage.getItem('userToken');
   },
